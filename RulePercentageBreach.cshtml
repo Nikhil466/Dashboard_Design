@@ -1,0 +1,110 @@
+﻿@using RazorEngine
+@using RazorEngine.Templating
+@using W360.Rules.Data
+@using System.Linq
+
+@layout _Product360Layout
+
+@inherits TemplateBase<RulePercentageBreach>
+
+@{
+    string selectedCustomer = string.Empty;
+    foreach (RuleFilter f in Model.Rule.Filters)
+    {
+        if (f.KustoFilter != null && f.KustoFilter.Contains("C360_ID"))
+        {
+            selectedCustomer = f.Label;
+        }
+    }
+    string filter = "";
+    foreach (RuleFilter f in Model.Rule.Filters)
+    {
+        filter = filter + f.Label + ";";
+    }
+    string CurrentWeek = Model.Breaches.First().IngestionDate.ToString("MM/dd");
+    string PreviousWeek = Model.Breaches.First().IngestionDate.AddDays(-7).ToString("MM/dd");
+
+    string contentStyle = "font-family:Segoe,'Segoe UI','DejaVu Sans','Trebuchet MS',Verdana,sans-serif;font-size:14px;";
+    string tableHeaderStyle = "font-family:Segoe,'Segoe UI','DejaVu Sans','Trebuchet MS',Verdana,sans-serif;color:#999999;font-size:12px;";
+    string tableRowStyle = "font-family:Segoe,'Segoe UI','DejaVu Sans','Trebuchet MS',Verdana,sans-serif;border-top:1px #7F7F7F solid;font-size:14px;";
+    string firstname = "test";
+    string unit = Model.Meter.Product.Split(new string[] { "Unit:" }, StringSplitOptions.None)[1];
+}
+
+<p style="@contentStyle">
+    Hello @firstname
+</p>
+<p style="@contentStyle">
+    This is an alert you requested for customers who satisfy @Model.Rule.Description rule. Based on the usage changes for the week ending @CurrentWeek, following customers were identified satisfying your alert criteria. You can click on customer names to learn more
+</p>
+
+<p style="@contentStyle">
+    Alert Criteria: 
+    @if (Model.Meter.Operator == Operator.MoreThan)
+    {
+        <span>></span>
+    }
+    else
+    {
+        <span><</span>
+    }
+    @Model.Meter.Threshold%
+    @if (Model.Meter.Operator == Operator.MoreThan)
+    {
+        <span>gain</span>
+    }
+    else
+    {
+        <span>drop</span>
+    }
+     in VM Core @@unit.Substring(0, @unit.Length - 1) with a minimum weekly change of @Model.Meter.MinimumValue
+    @*@if (selectedCustomer != string.Empty)
+    {
+        <span> for @selectedCustomer</span>
+    }*@
+    @if ((Model.Rule.Filters.Count > 1 && selectedCustomer != "") || (Model.Rule.Filters.Count > 0 && selectedCustomer == ""))
+    {
+        <div style="@contentStyle">
+            <label style="@contentStyle">Filters Applied:</label>
+            <ul>
+                @foreach (RuleFilter f in Model.Rule.Filters)
+                {
+                    if (f.Label != selectedCustomer)
+                    {
+                        <li style="@contentStyle">@f.Label</li>
+                    }
+                }
+            </ul>
+        </div>
+    }
+
+</p>
+<p style="@contentStyle">
+    Weekly Usage measured in VM @Model.Meter.Offering
+</p>
+<p style="@contentStyle">
+    Reporting Week = Week Ending @CurrentWeek, Prior Week = Week Ending @PreviousWeek, Sorted by : Weekly Change in Usage
+</p>
+<table cellspacing="0" cellpadding="8">
+    <tr>
+        <td style="@tableHeaderStyle">Rank</td>
+        <td style="@tableHeaderStyle">Customer Name</td>
+        <td style="@tableHeaderStyle">@Model.Meter.Offering Week Ending @CurrentWeek</td>
+        <td style="@tableHeaderStyle">@Model.Meter.Offering Week Ending @PreviousWeek</td>
+        <td style="@tableHeaderStyle">WOW Change</td>
+        <td style="@tableHeaderStyle">WOW % Change</td>
+        <td style="@tableHeaderStyle">12-Week Average % Change</td>
+    </tr>
+    @foreach (PercentageBreachCandidate b in Model.Breaches)
+    {
+        <tr>
+            <td style="@tableRowStyle">@b.Rank</td>
+            <td style="@tableRowStyle"><a href="https://u360.azurewebsites.net/customer/@(b.C_ID)?offering=@(Model.Meter.Offering)&product=@(Model.Meter.Product.Replace(" ","20%"))&filter=@(filter)">@b.C_Name</a></td>
+            <td style="@tableRowStyle text-align:center;">@b.Current.ToString("N0")</td>
+            <td style="@tableRowStyle text-align:center;">@b.Previous.ToString("N0")</td>
+            <td style="@tableRowStyle text-align:center;">@b.Change.ToString("N0")</td>
+            <td style="@tableRowStyle text-align:center;">@b.PercentChange.ToString("P2")</td>
+            <td style="@tableRowStyle text-align:center;">@((b.PreviousN <= 0 || (Math.Pow((b.Current / b.PreviousN), (1.0 / 12.0)) - 1) > 100) ? "-" : (Math.Pow(b.Current / b.PreviousN, 1.0 / 12.0) - 1.0).ToString("P2"))</td>
+        </tr>
+    }
+</table>

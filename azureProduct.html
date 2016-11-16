@@ -1,0 +1,234 @@
+﻿<div ng-controller="azureProductController" ng-init="leftPaneOpen = true; leftPanePinned = true;">
+    <!-- BREADCRUMB BAR -->
+    <div class="breadcrumb-bar fixed-breadcrumb">
+        <div style="min-height:34px; width: 100%">
+            <div style="float: left; width:50px; min-height: 34px; font-size: 22px; line-height: 1; padding: 6px 0; text-align: center;">
+                <span class="fa fa-filter"></span>
+            </div>
+            <div class="flex-container" style="height:34px; overflow-y: auto; /**HEIGHT AND OVERFLOW ARE HACKS**/float:left; width:calc(100% - 50px)">
+                <div ng-repeat="fltr in AppliedFilterList">
+                    <div class="flex-item" ng-click="rmvFilter(fltr.BCDim, fltr.BCFtlr);">{{fltr.BCDim}}={{fltr.BCFtlr}}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- FILTER PANE -->
+    <div ng-class="leftPaneOpen ? 'filter-panel-open' : 'filter-panel-closed'">
+        <!-- Open/Close -->
+        <div style="position:absolute; right:-5px;" ng-click="leftPaneOpen = !leftPaneOpen">
+            <div ng-class="leftPaneOpen ? 'filter-panel-control-open' : 'filter-panel-control-closed'">
+                <i ng-class="leftPaneOpen ? 'fa fa-chevron-left' :'fa fa-chevron-right'" aria-hidden="true"></i><br />
+                <div class="filter-panel-control-text">Filters</div>
+            </div>
+        </div>
+        <div style="width:calc(100% - 20px); height: 100%; overflow-y:auto">
+            <!-- Daily/Weekly/Monthly -->
+            <h5>Time Scale</h5>
+            <form style="margin-bottom:20px">
+                <div ng-show="showDaily" class="mx-button">
+                    <input type="radio" name="mx" id="button1" ng-click="updatePeriod('d')">
+                    <label for="button1" unselectable>Daily</label>
+                </div>
+                <div ng-show="showWeekly" class="mx-button">
+                    <input type="radio" name="mx" id="button2" ng-click="updatePeriod('w')" checked>
+                    <label for="button2" unselectable>Weekly</label>
+                </div>
+                <div ng-show="showMonthly" class="mx-button">
+                    <input type="radio" name="mx" id="button3" ng-click="updatePeriod('m')">
+                    <label for="button3" unselectable>Monthly</label>
+                </div>
+            </form>
+            <div ng-repeat="dimEle in selectionFilterList">
+                <h5 ng-if="dimEle.dimName == 'Region' && dimEle.dimFltrLst.length > 3">Region</h5>
+                <h5 ng-if="dimEle.dimName == 'CustomerType' && dimEle.dimFltrLst.length > 3">Customer</h5>
+                <h5 ng-if="dimEle.dimName == 'Category' && dimEle.dimFltrLst.length > 3">Usage Type</h5>
+                <select ng-if="dimEle.dimFltrLst.length > 3" class="filter-text" name="{{dimEle.dimName}}Select" ng-change="updateDim(dimEle.dimName, dimEle.Selected);" ng-model="dimEle.Selected">
+                    <option ng-repeat="DimFilter in dimEle.dimFltrLst" value="{{DimFilter.id}}" style="background-color: {{DimFilter.BG.color}};">{{DimFilter.BG.sign}}  {{DimFilter.name}}</option>
+                </select>
+            </div>
+        </div>
+        <!-- Lock/unlock filter pane -->
+        <!--<div ng-click="leftPanePinned = !leftPanePinned" class="filter-pane-lock-control unselectable">
+            <i ng-class="leftPanePinned ? 'fa fa-lock' : 'fa fa-unlock'" style="width:14px; float:left;" aria-hidden="true"></i>
+            <div style="line-height:1; margin-left: 2px; text-align: center;">{{leftPanePinned ? 'Unlock' : 'Lock'}} filter panel</div>
+        </div>-->
+    </div>
+    <!-- PRODUCTS BREADCRUMB DRILLDOWN -->
+    <div style="padding: 0px 40px; margin-top:54px;" ng-style="{'margin-left': (leftPaneOpen && leftPanePinned ?'240px':'20px')}" ng-click="leftPaneOpen = leftPanePinned ? leftPaneOpen : false">
+        <div class="sub-panel" ng-if="azureOffering.showName">
+            <div class="clearfix">
+                <h3>{{azureOffering.showName}} - {{periodly}} Usage Until {{endquerydate}}</h3>
+            </div>
+            <div class="row">
+                <div class="col-md-12" style="overflow-x:auto;overflow-y:hidden;white-space:nowrap;">
+                    <div style="height:204px" multitiles config="ProductsMetrics" selected="productShowName" />
+                </div>
+             
+           <!--      <div class="col-md-12" style="overflow-x:hidden;overflow-y:hidden;white-space:nowrap;">
+                    <div style="height:204px" carousel config="ProductsMetrics" selected="productShowName" />
+                </div>
+             -->     
+            </div>
+        </div>
+        <div ng-if="ActCustPrdAllCat == undefined">
+            <div class="top-buffer">
+                <h3>{{productShowName.replace('Unit: ', '')}} - {{periodly}} Usage</h3>
+            </div>
+        </div>
+        <div ng-if="ActCustPrdAllCat != undefined">
+            <div class="top-buffer">
+                <h3>{{periodly}} {{productShowName.replace('(Unit: Customers)', '')}}</h3>
+            </div>
+        </div>
+        <!-- SECTIONS NAV -->
+        <div ng-if="ActCustPrdAllCat == undefined">
+            <div class="">
+                <ul class="nav nav-tabs unselectable">
+                    <li role="presentation" ng-class="selectedSection == undefined || selectedSection == 'summary' ? 'active' : ''" ng-click="selectedSection = 'summary'"><a>Summary</a></li>
+                    <li role="presentation" ng-if="showCategories" ng-class="$parent.selectedSection == 'categories' ? 'active' : ''" ng-click="$parent.selectedSection = 'categories'"><a>By Product Categories</a></li>
+                    <li role="presentation" ng-if="customerUsageList != undefined" ng-class="$parent.selectedSection == 'customerSegments' ? 'active' : ''" ng-click="$parent.selectedSection = 'customerSegments'">
+                        <a>By Customer Segments</a>
+                        <div ng-if="selectedSection == 'customerSegments'" style="position:absolute; width: calc({{w}}px - 100px);">
+                            <div class="sub-buffer">
+                                <ul class="nav nav-tabs sub-nav sub-nav-tab unselectable">
+                                    <li ng-repeat="customerUsage in customerUsageList" role="presentation" ng-class="($first && $parent.$parent.$parent.selectedSegment == undefined) || $parent.$parent.$parent.selectedSegment == customerUsage.dimName ? 'active' : ''" ng-click="$parent.$parent.$parent.selectedSegment = customerUsage.dimName">
+                                        <a>{{customerUsage.showDimName}}</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </li>
+                    <li role="presentation" ng-if="showRegions" ng-class="$parent.selectedSection == 'regions' ? 'active' : ''" ng-click="$parent.selectedSection = 'regions'"><a>By Regions</a></li>
+                    <li role="presentation" ng-if="usageByCustomDimList.length > 0" ng-class="$parent.selectedSection == 'customDimensions' ? 'active' : ''" ng-click="$parent.selectedSection = 'customDimensions'">
+                        <a>By Custom Dimensions</a>
+                        <div ng-if="selectedSection == 'customDimensions'" style="position:absolute; width: calc({{w}}px - 700px);">
+                            <div class="sub-buffer">
+                                <ul class="nav nav-tabs sub-nav sub-nav-tab unselectable">
+                                    <li ng-repeat="usageByCustomDim in usageByCustomDimList" role="presentation" ng-class="($first && $parent.$parent.$parent.selectedSubSection == undefined) || $parent.$parent.$parent.selectedSubSection == usageByCustomDim.dimName ? 'active' : ''" ng-click="$parent.$parent.$parent.selectedSubSection = usageByCustomDim.dimName">
+                                        <a>{{usageByCustomDim.dimName}}</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </li>
+                    <li role="presentation" ng-class="selectedSection == 'interestingCustomers' ? 'active' : ''" ng-click="selectedSection = 'interestingCustomers'">
+                        <a>Interesting Customers</a>
+                        <div ng-if="selectedSection == 'interestingCustomers'" style="position:absolute;width: 500px">
+                            <div class="sub-buffer">
+                                <ul class="nav nav-tabs sub-nav sub-nav-tab unselectable">
+                                    <li role="presentation" ng-class="$parent.selectedtopcustomer == undefined || $parent.selectedtopcustomer == 'movers' ? 'active' : ''" ng-click="$parent.selectedtopcustomer = 'movers'"><a>Top Movers</a></li>
+                                    <li role="presentation" ng-class="$parent.selectedtopcustomer == 'top' ? 'active' : ''" ng-click="$parent.selectedtopcustomer = 'top'"><a>Top Customers</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </li>
+                    <li role="presentation" ng-class="selectedSection == 'actCustomer' ? 'active' : ''" ng-click="selectedSection = 'actCustomer'"><a>Customer Adoption</a></li>
+                </ul>
+            </div>
+            <div ng-if="selectedSection == 'interestingCustomers' || selectedSection == 'customDimensions' || selectedSection == 'customerSegments'" style="height: 25px" />
+            <div ng-if="!showCategories && selectedSection == 'categories' || !showRegions && selectedSection == 'regions'" ng-init="$parent.selectedSection = 'summary'" />
+            <!-- SECTIONS -->
+            <div class="top-buffer">
+                <div ng-if="selectedSection == undefined ||selectedSection == 'summary'">
+                    <summary-section periodly="periodly" period="period" period-qty="periodQty" unit="currentmetric" usage-chart="totalUsageChart" growth-chart="growthChart" products="ProductsMetrics" selected-product="productShowName" end-query-date="endquerydate"/>
+                </div>
+                <div ng-if="selectedSection == 'regions'">
+                    <usage-by-dim-section period="period" unit="currentmetric" usage-by-dim="regionData.chrt" />
+                </div>
+                <div ng-if="selectedSection == 'actCustomer'">
+                    <customer-by-dim-section period="period" unit="currentmetric" usage-by-dim="actCustPrd" />
+                </div>
+                <div ng-if="selectedSection == 'categories'">
+                    <usage-by-dim-section period="period" unit="currentmetric" usage-by-dim="categoryData.chrt" />
+                </div>
+                <div ng-if="selectedSection == 'interestingCustomers'">
+                    <div class="row pull-right">
+                        <input class="alert" value="Set an Alert" type="button" ng-click="setAlert()">
+                    </div>
+                    <div ng-if="selectedtopcustomer == undefined || selectedtopcustomer == 'movers'">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <interesting-customers-section period="period" unit="currentmetric" period-qty="periodQty" period-growth="periodGrowth" top-n-usage=10 increasing="true" num-customers="customerQty" top-usage="increasing" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <interesting-customers-section period="period" unit="currentmetric" period-qty="periodQty" period-growth="periodGrowth" top-n-usage=10 decreasing="true" num-customers="customerQty" top-usage="decreasing" />
+                            </div>
+                        </div>
+                    </div>
+                    <div ng-if="selectedtopcustomer == 'top'">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <interesting-customers-section period="period" unit="currentmetric" period-qty="periodQty" period-growth="periodGrowth" top-n-usage="maxCustomerQty" num-customers="customerQty" top-usage="topMover" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div ng-if="selectedSection == 'customerSegments'">
+                    <div ng-repeat="custDim in customerUsageList">
+                        <div ng-if="($first && $parent.selectedSegment == undefined) || $parent.selectedSegment == custDim.dimName">
+                            <usage-by-dim-section period="period" unit="currentmetric" usage-by-dim="custDim.chrt" />
+                        </div>
+                    </div>
+                </div>
+                <div ng-if="selectedSection == 'customDimensions'">
+                    <div ng-repeat="usageBySubCustomDim in usageByCustomDimList">
+                        <div ng-if="($first && $parent.selectedSubSection == undefined) || $parent.selectedSubSection == usageBySubCustomDim.dimName ">
+                            <usage-by-dim-section period="period" unit="currentmetric" usage-by-dim="usageBySubCustomDim.chrt" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- SECTIONS NAV ACTIVE CUSTOMER-->
+        <div ng-if="ActCustPrdAllCat != undefined">
+            <div class="">
+                <ul class="nav nav-tabs unselectable">
+                    <li role="presentation" ng-class="selectedSection == undefined || selectedSection == 'summary' ? 'active' : ''" ng-click="selectedSection = 'summary'"><a>Summary</a></li>
+                    <li role="presentation" ng-class="selectedSection == 'Products' ? 'active' : ''" ng-click="selectedSection = 'Products'"><a>By Products</a></li>
+                    <li role="presentation" ng-if="szCustTypeFltrLst" ng-class="$parent.selectedSection == 'customerSegments' ? 'active' : ''" ng-click="$parent.selectedSection = 'customerSegments'"><a>By Internal vs External</a></li>
+                    <li role="presentation" ng-if="szAzrGrpFltrLst" ng-class="$parent.selectedSection == 'AzureGroup' ? 'active' : ''" ng-click="$parent.selectedSection = 'AzureGroup'"><a>Azure Group</a></li>
+                    <li role="presentation" ng-if="showRegions" ng-class="$parent.selectedSection == 'regions' ? 'active' : ''" ng-click="$parent.selectedSection = 'regions'"><a>By Regions</a></li>
+                    <li role="presentation" ng-if="usageByCustomDimList.length > 0" ng-class="$parent.selectedSection == 'customDimensions' ? 'active' : ''" ng-click="$parent.selectedSection = 'customDimensions'">
+                        <a>By Custom Dimensions</a>
+                        <div ng-if="selectedSection == 'customDimensions'" style="position:absolute;width: 500px">
+                            <div class="sub-buffer">
+                                <ul class="nav nav-tabs sub-nav sub-nav-tab unselectable">
+                                    <li ng-repeat="usageByCustomDim in usageByCustomDimList" role="presentation" ng-class="($first && $parent.$parent.$parent.selectedSubSection == undefined) || $parent.$parent.$parent.selectedSubSection == usageByCustomDim.dimName ? 'active' : ''" ng-click="$parent.$parent.$parent.selectedSubSection = usageByCustomDim.dimName"><a>{{usageByCustomDim.dimName}}</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div ng-if="selectedSection == 'customDimensions'" style="height: 25px" />
+
+            <!-- SECTIONS ACTIVE CUSTOMER -->
+            <div class="top-buffer">
+                <div ng-if="selectedSection == undefined ||selectedSection == 'summary'">
+                    <summary-section periodly="periodly" period="period" period-qty="periodQty" unit="currentmetric" usage-chart="totalUsageChart" growth-chart="growthChart" products="ProductsMetrics" selected-product="productShowName" end-query-date="endquerydate"/>
+                </div>
+                <div ng-if="selectedSection == 'regions'">
+                    <customer-by-dim-section period="period" usage-by-dim="regionData.chrt" />
+                </div>
+                <div ng-if="selectedSection == 'customerSegments'">
+                    <customer-by-dim-section period="period" usage-by-dim="customerTypeData.chrt" />
+                </div>
+                <div ng-if="selectedSection == 'AzureGroup'">
+                    <customer-by-dim-section period="period" usage-by-dim="azureGroupData.chrt" />
+                </div>
+                <div ng-if="selectedSection == 'Products'">
+                    <customer-by-dim-section period="period" usage-by-dim="ActCustPrdAllCat" />
+                </div>
+                <div ng-if="selectedSection == 'customDimensions'">
+                    <div ng-repeat="usageBySubCustomDim in usageByCustomDimList">
+                        <div ng-if="($first && $parent.selectedSubSection == undefined) || $parent.selectedSubSection == usageBySubCustomDim.dimName">
+                            <customer-by-dim-section period="period" usage-by-dim="usageBySubCustomDim.chrt" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

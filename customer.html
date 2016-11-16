@@ -1,0 +1,123 @@
+﻿<div ng-controller="customerController" ng-init="leftPaneOpen = true; leftPanePinned = true;">
+    <!-- BREADCRUMB BAR -->
+    <div class="breadcrumb-bar fixed-breadcrumb">
+        <div style="min-height:34px; width: 100%">
+            <div style="float: left; width:50px; min-height: 34px; font-size: 22px; line-height: 1; padding: 6px 0; text-align: center;">
+                <span class="fa fa-filter"></span>
+            </div>
+            <div class="flex-container" style="height:34px; overflow-y: auto; /**HEIGHT AND OVERFLOW ARE HACKS**/float:left; width:calc(100% - 50px)">
+                <div ng-repeat="fltr in AppliedFilterList">
+                    <div class="flex-item" ng-click="rmvFilter(fltr.BCDim, fltr.BCFtlr);">{{fltr.BCDim}}={{fltr.BCFtlr}}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- FILTER PANE -->
+    <div ng-class="leftPaneOpen ? 'filter-panel-open' : 'filter-panel-closed'">
+        <!-- Open/Close -->
+        <div style="position:absolute; right:-5px;" ng-click="leftPaneOpen = !leftPaneOpen">
+            <div ng-class="leftPaneOpen ? 'filter-panel-control-open' : 'filter-panel-control-closed'">
+                <i ng-class="leftPaneOpen ? 'fa fa-chevron-left' :'fa fa-chevron-right'" aria-hidden="true"></i><br />
+                <div class="filter-panel-control-text">Filters</div>
+            </div>
+        </div>
+        <div style="width:calc(100% - 20px); height: 100%; overflow-y:auto">
+            <!-- Daily/Weekly/Monthly -->
+            <h5>Time Scale</h5>
+            <form style="margin-bottom:20px">
+                <div ng-show="showDaily" class="mx-button">
+                    <input type="radio" name="mx" id="button1" ng-click="updatePeriod('d')">
+                    <label for="button1" unselectable>Daily</label>
+                </div>
+                <div ng-show="showWeekly" class="mx-button">
+                    <input type="radio" name="mx" id="button2" ng-click="updatePeriod('w')" checked>
+                    <label for="button2" unselectable>Weekly</label>
+                </div>
+                <div ng-show="showMonthly" class="mx-button">
+                    <input type="radio" name="mx" id="button3" ng-click="updatePeriod('m')">
+                    <label for="button3" unselectable>Monthly</label>
+                </div>
+            </form>
+            <!-- Filters -->
+            <div ng-repeat="dimEle in usageByCustomDimList">
+                <h5 ng-if="dimEle.dimName == 'Region' && dimEle.dimFltrLst.length > 3">Region</h5>
+                <h5 ng-if="dimEle.dimName == 'CustomerType' && dimEle.dimFltrLst.length > 3">Customer</h5>
+                <h5 ng-if="dimEle.dimName == 'Category' && dimEle.dimFltrLst.length > 3">Usage Type</h5>
+                <select ng-if="dimEle.dimFltrLst.length > 3" class="filter-text" name="{{dimEle.dimName}}Select" ng-change="updateDim(dimEle.dimName, dimEle.Selected);" ng-model="dimEle.Selected">
+                    <option ng-repeat="DimFilter in dimEle.dimFltrLst" value="{{DimFilter.id}}" style="background-color: {{DimFilter.BG.color}};">{{DimFilter.BG.sign}}  {{DimFilter.name}}</option>
+                </select>
+            </div>
+        </div>
+        <!-- Lock/unlock filter pane -->
+        <!--<div ng-click="leftPanePinned = !leftPanePinned" class="filter-pane-lock-control unselectable">
+            <i ng-class="leftPanePinned ? 'fa fa-lock' : 'fa fa-unlock'" style="width:14px; float:left;" aria-hidden="true"></i>
+            <div style="line-height:1; margin-left: 2px; text-align: center;">{{leftPanePinned ? 'Unlock' : 'Lock'}} filter panel</div>
+        </div>-->
+    </div>
+    <!-- PRODUCTS AND FILTERS -->
+    <div style="padding: 0px 40px; margin-top:54px;" ng-style="{'margin-left': (leftPaneOpen && leftPanePinned ?'240px':'20px')}" ng-click="leftPaneOpen = leftPanePinned ? leftPaneOpen : false">
+        <div class="sub-panel">
+            <div class="clearfix">
+                <h3>
+                    {{customerName}} - {{periodly}} {{azureOffering.showName}} Usage Until {{endquerydate}}
+                    <input class="reachout" value="Reach Out to Field Contacts" ng-click="reachOut()" type="button">
+                    <input class="alert" value="Set an Alert" ng-click="setAlert()" type="button">
+                </h3>
+                <h4><a href="{{C360_Link}}" target="_blank">Click here</a> to view <b>cross-service</b> usage, availability and customer experience.</h4>
+            </div>
+
+            <div class="row" style="overflow-x:auto;overflow-y:hidden;white-space:nowrap">
+                <div class="col-md-12" style="overflow-x:auto;overflow-y:hidden;white-space:nowrap;">
+                    <div style="height:204px" multitiles config="ProductsMetrics" selected="productShowName" />
+                </div>
+            </div>
+        </div>
+        <div class="top-buffer">
+            <h3>{{productShowName.replace('Unit: ', '')}}</h3>
+        </div>
+        <!-- SECTIONS NAV -->
+        <div class="row">
+            <div class="main base-view clearfix">
+                <div class="col-md-6">
+                    <div style="height: 300px;" class="panel">
+                        <div class="panel-heading">
+                            Usage per {{period}}
+                        </div>
+                        <div class="panel-main">
+                            <div c3-chart data="stackedChartUsage" style="height: 260px; margin-right: 10px; position: absolute; bottom:0px; top:0px; left: 0px; right: 0px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="panel">
+                        <div class="panel-heading">
+                            Usage By Categories
+                        </div>
+                        <div style="height: 250px; overflow: auto;">
+                            <table style="width: 100%; min-height:260px" class="table table-striped">
+                                <thead>
+                                    <tr><th>{{dimension}}</th><th>% Total</th><th>Current</th><th>Change</th><th>WoW</th><th>12 {{period}}s</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="alternatingRowColors" ng-repeat="row in subDim"><td>{{row.name}}</td><td>{{row.share | numeraljs: '0.00%'}}</td><td title="{{row.curperiod}}"><span style="color: {{row.tcolor}}; font-weight:bolder;">{{row.trend}}</span> {{row.curperiod| numeraljs: '0,0.0a'}}</td><td title="{{row.delta}}">{{row.delta | numeraljs: '0,0.0a'}}</td><td>{{row.wow | numeraljs: '0.00%'}}</td><td>{{row.wow12 | numeraljs: '0.00%'}}</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3" ng-repeat="dim in usageByCustomDimList">
+                <div style="height: 300px;" class="panel">
+                    <div class="panel-heading">
+                        Usage By {{dim.dimName}}
+                    </div>
+                    <div class="panel-main">
+                        <div c3-chart data="dim.chrt" style="height: 260px; margin-right: 10px; position: absolute; bottom:0px; top:0px; left: 0px; right: 0px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

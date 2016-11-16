@@ -1,0 +1,112 @@
+﻿<form class="form-horizontal" role="form" name="alertForm" id="alertForm" novalidate ng-submit="alertForm.$valid && saveAlert()">
+    <div class="modal-header">
+        <button type="button" ng-click="$close()" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h3 ng-if="model.customerName==undefined" class="modal-title" id="modal-title" ng-init="showDescription=false">Create Alert Rule for {{model.offering}}: {{model.product}} </h3>
+        <h3 ng-if="model.customerName.length>0" class="modal-title" id="modal-title" ng-init="showDescription=false">Set Alert for {{model.customerName}} for {{model.offering}}: {{model.product}}</h3>
+    </div>
+    <div class="modal-body create setalert" style="overflow-y:scroll">
+        <div class="form-group">
+            <label class="title">Description</label>
+            <div class="col-sm-11" ng-class="{ 'has-error':alertForm.Name.$invalid }">
+                <input type="text" name="Name" ng-model="model.description" class="form-control m-w-o" required />
+                <div ng-messages="alertForm.Name.$error" style="color:red">
+                    <p ng-message="required">Description is required.</p>
+                </div>
+            </div>
+        </div>
+        <div ng-if="model.filters.length > 0" class="form-group">
+            <label class="title">Filters</label>
+            <div class="col-sm-11 filter-box" ng-if="model.filters.length > 0">
+                <ul class="filter">
+                    <li ng-repeat="f in model.filters">{{f.label}}</li>
+                </ul>
+            </div>
+        </div>
+        <div class="form-group" ng-show="customerAlert">
+            <label class="title">Metrics</label>
+            <div class="col-sm-12">
+                <select ng-options="option.name as option.showname for option in  model.productMetrics" ng-model="selectedMetric"></select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="title">Do you want the alert to be on an top increasing usage or top decreasing usage?</label>
+            <div class="col-sm-12">
+                <div class="checkbox-inline">
+                    <!--<input type="radio" id="topincrcust" value="increase" class="hinherit" name="top" ng-model="order" ng-click="changeLables('increase')" />-->
+                    <input type="radio" id="increase" value="increase" class="hinherit" name="top" ng-model="order" ng-click="changeLables('increase')" />
+                    <label for="increase">Top increasing usage</label>
+                </div>
+                <div class="checkbox-inline">
+                    <input type="radio" id="decrease" value="decrease" class="hinherit" name="top" ng-model="order" ng-click="changeLables('decrease')" />
+                    <label for="decrease">Top decreasing usage</label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row" ng-show="showAbsolute">
+            <label class="title">Do you want the alert to be based on an absolute value change or percentage change?</label>
+            <div class="col-sm-12">
+                <div class="checkbox-inline">
+                    <input type="radio" id="absolute" value="absolute" class="hinherit" name="customer" ng-click="showThresholdValues(false)" ng-model="abpervalue" />
+                    <label for="absolute">Absolute value</label>
+                </div>
+                <div class="checkbox-inline">
+                    <input type="radio" id="percentage" value="percentage" class="hinherit" name="customer" ng-click="showThresholdValues(true)" ng-model="abpervalue" />
+                    <label for="percentage">Percentage change</label>
+                </div>
+            </div>
+        </div>
+        <div ng-show="showThreshold">
+            <div class="form-group row">
+                <div class="col-sm-6 inputvalue">
+                    <label class="title">{{thresholdlbl}}</label>
+                    <div ng-class="{ 'has-error':  alertForm.Threshold.$invalid }">
+                        <input type="text" class="form-control small pull-left" ng-model="threshold" name="Threshold" ng-pattern="/^[0-9]{1,7}$/" required />
+                        <label class="unit">{{unit}}</label>
+                        <div ng-messages="alertForm.Threshold.$error" class="pull-left" style="color:red">
+                            <p ng-message="required">Threshold is required</p>
+                            <p ng-message="pattern">Value must be number</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 inputvalue" ng-show="showMinValue">
+                    <label class="title">Minimum absolute weekly change</label>
+                    <div ng-class="{ 'has-error':   alertForm.Minvalue.$invalid }">
+                        <input type="text" name="Minvalue" ng-model="minValue" class="form-control small pull-left" ng-pattern="/^[0-9]{1,7}$/" required />
+                        <label class="unit">{{mincount}}</label>
+                        <div ng-messages="alertForm.Minvalue.$error" class="pull-left" style="color:red">
+                            <p ng-message="required">Minimum value is required</p>
+                            <p ng-message="pattern">Value must be number</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group" ng-show="!customerAlert">
+                <label class="title">Limit alert to number of customers   </label>
+                <div class="col-sm-12" ng-class="{ 'has-error':  alertForm.NumberOfCustomers.$invalid }">
+                    <input type="text" class="form-control small" name="NumberOfCustomers" ng-model="model.numberofcustomers" ng-pattern="/^[0-9]{1,7}$/" required />
+                    <div ng-messages="alertForm.NumberOfCustomers.$error" style="color:red">
+                        <p ng-message="required">Volume limit is required</p>
+                        <p ng-message="pattern">Value must be number</p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="form-group">
+                <label class="title">Recipients</label>
+                <div class="col-sm-12">
+                    <tags-input ng-model="Subscribers" display-property="subscriber" style="width:95% !important"></tags-input>
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="form-group">
+            <input type="submit" value="OK" class="btn btn-primary" />
+            <input type="submit" value="Cancel" class="btn btn-primary" ng-click="$close()" />
+        </div>
+    </div>
+
+
+</form>

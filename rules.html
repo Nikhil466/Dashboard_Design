@@ -1,0 +1,161 @@
+﻿<div ng-controller="rulesController">
+    <!-- BREADCRUMB BAR -->
+    <div class="breadcrumb-bar fixed-breadcrumb">
+        <div style="min-height:34px; width: 100%">
+            <div style="float: left; width:50px; min-height: 34px; font-size: 22px; line-height: 1; padding: 6px 0; text-align: center;">
+                <span class="fa fa-filter"></span>
+            </div>
+            <div class="flex-container" style="height:34px; overflow-y: auto; /**HEIGHT AND OVERFLOW ARE HACKS**/float:left; width:calc(100% - 50px)">
+            </div>
+        </div>
+    </div>
+
+    <!-- RULES MANAGEMENT -->
+    <!-- sidebar -->
+    <div id="sidebar" class="filter-panel-open">
+        <ul class="nav nav-tabs nav-justified">
+            <li class="active">
+                <a href="#myAlerts" data-toggle="tab" ng-click="selected=selectedMyRule">My Alert Rules</a>
+            </li>
+        </ul>
+
+        <div class="tab-content clearfix">
+            <div class="tab-pane active" id="myAlerts">
+                <table>
+                    <tr ng-repeat="rule in subscribedRules" ng-click="selectMy(rule)" ng-class="{active: rule == selectedMyRule}">
+                        <td><span class="fa fa-check"></span></td>
+                        <td>{{rule.description}}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- rule details -->
+    <div id="rules" ng-hide="selected == undefined">
+        <div>
+            <br />
+            <label>Alert Rule for {{offering}}: {{product}}</label>
+        </div>
+        <div>
+            <label class="title">{{selected.description}}</label>
+        </div>
+        
+        <div>
+            <label>Rule</label>
+            <!--<input class="alert" value="Set an Alert" ng-click="openAlert()" type="button">-->
+            <button ng-if="!S360AlertExists" class="btn btn-primary" type="button" data-toggle="modal" data-target="#messageModal">Get Alerts (S360)</button>
+            <button ng-if="S360AlertExists" class="btn btn-primary" type="button" data-toggle="modal" ng-click="unsubscribeServiceAlerts()">Unsubscribe (S360)</button>
+            <button ng-if="!C360AlertExists" class="btn btn-primary" type="button" data-toggle="modal" data-target="#getAlertsModal">Get Alerts (C360)</button>
+            <button ng-if="C360AlertExists" class="btn btn-primary" type="button" data-toggle="modal" ng-click="unsubscribePinnedCustomersAlerts()">Unsubscribe (C360)</button>
+            <div ng-repeat="meter in selected.meters">
+                <span ng-if="meter.operator == 'MoreThan'">Change in usage is above </span>
+                <span ng-if="meter.operator == 'LessThan'">Change in usage is below </span>
+                <span ng-if="meter.$type == 'W360.Rules.Data.RuleAbsoluteMeter'">{{meter.threshold}}</span>
+                <span ng-if="meter.$type == 'W360.Rules.Data.RulePercentageMeter'">{{meter.threshold}}% and a minimum usage of {{meter.minimumValue}}</span>
+                <span ng-if="selectedCustomer != ''"> for {{selectedCustomer}}</span>
+                <br />
+            </div>
+        </div>
+        <div>
+            <label>Recipients</label>
+            <p><span ng-repeat="s in selected.subscribers">{{s.subscriber}}<span ng-if="!$last">, </span></span></p>
+        </div>
+        <div>
+            <label>Filters</label>
+            <!--<ul class="filter">
+                <li ng-repeat="f in selected.filters">{{f.filterLabel}}</li>
+            </ul>-->
+            <div ng-if="(selected.filters.length > 1 && selectedCustomer != '') || (selected.filters.length > 0 && selectedCustomer == '')">
+                <!--<label>Filters</label>-->
+                <ul class="filter">
+                    <li ng-repeat="f in selected.filters">
+                        <span ng-if="f.label != selectedCustomer">{{f.label}}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscribe POP UP -->
+    <div class="modal fade" id="subscribeModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to subscribe to this rule?</p>
+                    <p>{{selectedOtherRule.description}}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="subscribe()">Subscribe</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unsubscribe POP UP -->
+    <div class="modal fade" id="unsubscribeModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to unsubscribe from this rule?</p>
+                    <p>{{selectedMyRule.description}}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="unsubscribe()">Unsubscribe</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message POP UP for Service 360 -->
+    <div class="modal fade" id="messageModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-body">
+                    <content>
+                        Congratulations you are setting up an alert for Out of SLA items belonging to Azure security Forum.
+                        You have additionally scoped it down to Owner A and security domain.
+                        You will be notified every Monday for new out of SLA items, missing or past SLAs.
+                    </content>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="saveServiceAlerts()">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Get Alerts for Customer 360-->
+    <div class="modal fade" id="getAlertsModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-body">
+                    <content>
+                        Congratulations, you have successfully set up an alert on your pinned customers.
+                        You will now receive a weekly alert if any of your pinned customers daily availability of key services falling under four 9s, weekly normalized usage drops by 10% or support tickets lying unresolved for > 7 days go up.
+                    </content>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="savePinnedCustomersAlerts()">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+

@@ -1,0 +1,114 @@
+﻿<div class="modal-header">
+    <button type="button" ng-click="$close()" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    <h3 class="modal-title" id="modal-title">Reach Out to Field Contacts</h3>
+</div>
+<div class="modal-body" id="modal-body">
+    <form class="form-horizontal" role="form">
+        <div ng-if="model.contacts.tam.length > 0 || model.contacts.pss.length > 0 || model.contacts.csa.length > 0 || model.contacts.csa2.length > 0 || model.contacts.dsa.length > 0 || model.contacts.dsa2.length > 0" class="form-group">
+            <label class="col-sm-2 control-label">Contacts</label>
+            <div class="col-sm-9">
+                <div ng-repeat="contact in contactCheckboxModel" class="contact">
+                    <label>
+                        <input type="checkbox" value="{{contact.alias}}" ng-model="contact.checked">
+                        <span>{{contact.name.toUpperCase()}}: {{contact.alias}}</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">To</label>
+            <div class="col-sm-9">
+                <input type="text" id="TO" ng-model="to" class="form-control" required/>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">CC</label>
+            <div class="col-sm-9">
+                <input type="text" id="CC" ng-model="cc" class="form-control" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">Subject</label>
+            <div class="col-sm-9">
+                <input type="text" id="subject" class="form-control" ng-model="subject" required/>
+
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">Content</label>
+            <div class="col-sm-9">
+                <textarea ng-model="content" id="content" class="form-control"></textarea>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">E-mail Preview</label>
+            <div class="col-sm-9">
+                <div class="preview" style="border:1px solid #808080;min-height:330px">
+                    <div id="body">
+                        <table>
+                            <tr>
+                                <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; font-size:14px">
+                                    <div ng-bind-html="formatContent()"></div><br/>
+                                    <br/>
+                                    <div ng-if="filterString.length > 0">
+                                        <span style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; color:#1570a6; font-size:18px">Filtered By</span> <br />
+                                        {{filterString}}<br/>
+                                        <br />
+                                    </div>
+                                    <span style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; color:#1570a6; font-size:18px"> Change in {{selectedProduct.name}} Usage </span> <br />
+                                    <table cellspacing="0" cellpadding="8">
+                                        <tr>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; color:#999999; font-size:12px;" valign="bottom">Meter</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:left; color:#999999; font-size:12px; padding-left:15px;" valign="bottom" padding-right="5px;">{{model.period == 'Week' ? model.period + ' ending' : ''}}<br />{{model.period == 'Month' ? model.current.substring(0,2) + model.current.substring(5) : model.current}}</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:left; color:#999999; font-size:12px; padding-left:15px;" valign="bottom" padding-right="5px;">Change from<br />Previous {{model.period}}</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:left; color:#999999; font-size:12px; padding-left:15px;" valign="bottom" padding-right="5px;">{{lastterm}}<br />Change</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:left; color:#999999; font-size:12px; padding-left:15px;" padding-right="5px;">{{periodCount}}-{{longterm}} Avg<br />{{lastterm}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; border-top:1px #7F7F7F solid; font-size:14px;" >{{selectedProduct.name}}</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:center; border-top:1px #7F7F7F solid; font-size:14px; padding-left:15px;" >{{selectedProduct.current}}</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:center; border-top:1px #7F7F7F solid; font-size:14px; padding-left:15px;" >{{selectedProduct.delta}}</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:center; border-top:1px #7F7F7F solid; font-size:14px; padding-left:15px;" >{{selectedProduct.wow}}</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:center; border-top:1px #7F7F7F solid; font-size:14px; padding-left:15px;" >{{selectedProduct.wow12}}</td>
+                                        </tr>
+                                    </table>
+                                    <br />
+                                    <br />
+                                    <span style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; color:#1570a6; font-size:18px"> Other Related {{model.offering}} Usage Meters </span>
+                                    <table cellspacing="0" cellpadding="8">
+                                        <tr>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; color:#999999; font-size:12px;" valign="bottom">Meter</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:left; color:#999999; font-size:12px; padding-left:15px;" valign="bottom" padding-right="5px;">{{model.period == 'Week' ? model.period + ' ending' : ''}}<br />{{model.period == 'Month' ? model.current.substring(0,2) + model.current.substring(5) : model.current}}</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:left; color:#999999; font-size:12px; padding-left:15px;" valign="bottom" padding-right="5px;">Change from<br />Previous {{model.period}}</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:left; color:#999999; font-size:12px; padding-left:15px;" valign="bottom" padding-right="5px;">{{lastterm}}<br />Change</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:left; color:#999999; font-size:12px; padding-left:15px;" padding-right="5px;">{{periodCount}}-{{longterm}} Avg<br />{{lastterm}}</td>
+                                        </tr>
+                                        <tr ng-repeat="m in otherProducts">
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; border-top:1px #7F7F7F solid; font-size:14px;">{{m.name}}</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:center; border-top:1px #7F7F7F solid; font-size:14px; padding-left:15px;">{{m.current}}</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:center; border-top:1px #7F7F7F solid; font-size:14px; padding-left:15px;">{{m.delta}}</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:center; border-top:1px #7F7F7F solid; font-size:14px; padding-left:15px;">{{m.wow}}</td>
+                                            <td style="font-family:Segoe, 'Segoe UI', 'DejaVu Sans', 'Trebuchet MS', Verdana, sans-serif; text-align:center; border-top:1px #7F7F7F solid; font-size:14px; padding-left:15px;">{{m.wow12}}</td>
+                                        </tr>
+                                    </table>
+                                    <br />
+                                    <br />
+                                    Learn more about this customer's usage at <a href="{{model.link}}">{{model.customerName}}</a>, and apply the filters shown above.<br />
+                                    <br />
+                                    To gain access to Product 360 and for questions, please visit the <a href="http://aka.ms/product360wiki">Product 360 Wiki</a>.<br />
+                                    <br />
+                                    TAM and Account Exectives, please access <a href="https://aka.ms/cecustomers">CE Customer Portal</a> for field related details.<br />
+                                    <br />
+                                    <span style="color:red">All information on this e-mail, including websites associated with hyperlinks is confidential and for internal use only. It must only be used by you as an intended recipient as well as cannot be shared in any form with anyone outside of Microsoft.</span> 
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-primary" ng-style="{'opacity':sendClicked ? 0.5 : 1}" type="button" ng-click="sendEmail()" ng-disabled="sendClicked">Send Email</button>
+</div>
